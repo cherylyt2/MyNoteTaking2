@@ -1,4 +1,5 @@
 import argparse
+import logging
 import os
 from pathlib import Path
 
@@ -7,6 +8,8 @@ from openai import OpenAI
 
 
 load_dotenv()
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 MODEL = "nvidia/nemotron-3-ultra-550b-a55b:free"
 PROMPT_PATH = Path(__file__).resolve().parent.parent / "prompts" / "translate_prompt.md"
@@ -50,6 +53,12 @@ def llm_generate(prompt: str, target_language: str) -> str:
             extra_body={"reasoning": {"enabled": True}},
         )
         choices = getattr(response, "choices", None)
+        finish_reason = getattr(choices[0], "finish_reason", None) if choices else None
+        logger.info(
+            "OpenRouter translation attempt %d finish_reason=%s",
+            attempt + 1,
+            finish_reason,
+        )
         message = getattr(choices[0], "message", None) if choices else None
         translation = getattr(message, "content", None)
         if (

@@ -51,7 +51,10 @@ class TranslationTests(unittest.TestCase):
 
     def test_llm_retries_provider_response_without_choices(self):
         mock_response = SimpleNamespace(
-            choices=[SimpleNamespace(message=SimpleNamespace(content='こんにちは'))]
+            choices=[SimpleNamespace(
+                finish_reason='stop',
+                message=SimpleNamespace(content='こんにちは'),
+            )]
         )
         with patch.dict(os.environ, {'OPENROUTER_API_KEY': 'test-key'}):
             with patch('src.translator.OpenAI') as openai:
@@ -59,10 +62,13 @@ class TranslationTests(unittest.TestCase):
                     SimpleNamespace(choices=None),
                     mock_response,
                 ]
-                result = llm_generate('Hello', 'Japanese')
+                with self.assertLogs('src.translator', level='INFO') as logs:
+                    result = llm_generate('Hello', 'Japanese')
 
         self.assertEqual(result, 'こんにちは')
         self.assertEqual(openai.return_value.chat.completions.create.call_count, 2)
+        self.assertIn('attempt 1 finish_reason=None', logs.output[0])
+        self.assertIn('attempt 2 finish_reason=stop', logs.output[1])
 
     def test_llm_rejects_malformed_provider_output_after_retry(self):
         malformed_response = SimpleNamespace(
