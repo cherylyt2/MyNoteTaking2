@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NoteTaker - Your Personal Note Manager</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        :root {
+            --bg-1: #f3ecff;
+            --bg-2: #e9e0ff;
+            --bg-3: #d9c8ff;
+            --panel: rgba(255, 255, 255, 0.7);
+            --panel-strong: rgba(255, 255, 255, 0.88);
+            --card: #f9f5ff;
+            --card-strong: #f1eaff;
+            --purple-primary: #8b5cf6;
+            --purple-deep: #6d44d8;
+            --purple-soft: #efe5ff;
+            --lavender: #d9c7ff;
+            --pink-soft: #f7d9ef;
+            --text: #3c2e5c;
+            --text-soft: #665a87;
+            --line: #e7ddff;
+            --success: #8ec5a1;
+            --success-text: #22543d;
+            --error: #f7c9d8;
+            --error-text: #7d2d4a;
+            --shadow: rgba(109, 68, 216, 0.18);
+        }
+
+        body {
+            font-family: 'Trebuchet MS', 'Segoe UI', 'Avenir Next', 'Nunito', sans-serif;
+            background:
+                radial-gradient(circle at top left, rgba(255,255,255,0.9), transparent 20%),
+                radial-gradient(circle at bottom right, rgba(216, 189, 255, 0.8), transparent 25%),
+                linear-gradient(135deg, var(--bg-1) 0%, var(--bg-2) 40%, var(--bg-3) 100%);
+            height: 100vh;
+            height: 100dvh;
+            min-height: 0;
+            color: var(--text);
+            letter-spacing: 0.02em;
+            position: relative;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            background-image:
+                linear-gradient(rgba(139, 92, 246, 0.06) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(139, 92, 246, 0.06) 1px, transparent 1px);
+            background-size: 28px 28px;
+            mask-image: radial-gradient(circle at center, black 45%, transparent 100%);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            height: 100vh;
+            height: 100dvh;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+            flex: 0 0 auto;
+        }
+
+        .header h1 {
+            font-size: 2.7rem;
+            margin-bottom: 10px;
+            font-family: 'Segoe UI', 'Trebuchet MS', sans-serif;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #fffafc;
+            text-shadow: 2px 2px 0 rgba(109, 68, 216, 0.35), 0 8px 20px rgba(109, 68, 216, 0.18);
+        }
+
+        .header p {
+            font-size: 1.05rem;
+            opacity: 0.95;
+            color: rgba(255,255,255,0.92);
+            font-weight: 600;
+            letter-spacing: 0.04em;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+            gap: 30px;
+            flex: 1;
+            min-width: 0;
+            min-height: 0;
+        }
+
+        .sidebar {
+            background: var(--panel-strong);
+            border: 1px solid rgba(139, 92, 246, 0.12);
+            border-radius: 22px;
+            padding: 25px;
+            box-shadow: 0 16px 36px var(--shadow);
+            backdrop-filter: blur(14px);
+            min-width: 0;
+            min-height: 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-controls {
+            display: flex;
+            flex: 0 0 auto;
+            flex-direction: column;
+        }
+
+        .note-editor {
+            background: var(--panel-strong);
+            border: 1px solid rgba(139, 92, 246, 0.12);
+            border-radius: 22px;
+            padding: 25px;
+            box-shadow: 0 16px 36px var(--shadow);
+            backdrop-filter: blur(14px);
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 14px;
+            margin-bottom: 20px;
+            transition: border-color 0.3s ease;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .new-note-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, var(--purple-primary) 0%, #b38ef7 55%, #d9a7f6 100%);
+            color: white;
+            border: none;
+            border-radius: 14px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 22px rgba(139, 92, 246, 0.28);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .new-note-btn:hover {
+            transform: translateY(-2px) scale(1.01);
+            box-shadow: 0 14px 28px rgba(139, 92, 246, 0.34);
+        }
+
+        .folder-panel {
+            margin-bottom: 20px;
+            border-top: 1px solid #e1e5e9;
+            padding-top: 20px;
+            flex: 0 0 auto;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .section-header h3 {
+            font-size: 1rem;
+            color: var(--purple-deep);
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .mini-btn {
+            border: none;
+            background: linear-gradient(135deg, #f2ebff, #e8dcff);
+            color: var(--purple-deep);
+            border-radius: 10px;
+            padding: 6px 10px;
+            font-size: 12px;
+            cursor: pointer;
+            font-weight: 700;
+            box-shadow: 0 6px 14px rgba(139, 92, 246, 0.08);
+            transition: transform 0.18s ease;
+        }
+
+        .mini-btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .folder-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: min(25vh, 200px);
+            overflow-x: hidden;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+        }
+
+        .folder-list[hidden] {
+            display: none;
+        }
+
+        .folder-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .folder-item {
+            flex: 1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 12px;
+            background: linear-gradient(180deg, #fdfaff, #f3ecff);
+            border: 1px solid rgba(139, 92, 246, 0.08);
+            border-radius: 12px;
+            cursor: pointer;
+            color: var(--text);
+            font-size: 14px;
+            text-align: left;
+            font-weight: 700;
+            transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+        }
+
+        .folder-item:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 16px rgba(139, 92, 246, 0.09);
+            border-color: rgba(139, 92, 246, 0.22);
+        }
+
+        .folder-item.active {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.12), rgba(216, 189, 255, 0.22));
+            border-color: var(--purple-primary);
+            color: var(--purple-deep);
+            box-shadow: inset 0 0 0 1px rgba(139, 92, 246, 0.12);
+        }
+
+        .folder-item small {
+            color: var(--purple-deep);
+            opacity: 0.8;
+            font-weight: 800;
+        }
+
+        .folder-actions {
+            display: flex;
+            gap: 4px;
+        }
+
+        .folder-actions button {
+            border: none;
+            border-radius: 6px;
+            padding: 6px 7px;
+            background: #e9ecef;
+            cursor: pointer;
+            font-size: 11px;
+        }
+
+        .notes-list {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding-right: 4px;
+            overscroll-behavior: contain;
+        }
+
+        .note-item {
+            padding: 15px;
+            border: 2px solid transparent;
+            border-radius: 14px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            background: linear-gradient(180deg, #fffdfd, #f8f3ff);
+            box-shadow: 0 4px 10px rgba(139, 92, 246, 0.04);
+        }
+
+        .note-item:hover {
+            border-color: rgba(139, 92, 246, 0.3);
+            transform: translateX(4px) translateY(-1px);
+            box-shadow: 0 10px 18px rgba(139, 92, 246, 0.08);
+        }
+
+        .note-item.active {
+            border-color: var(--purple-primary);
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, rgba(216, 189, 255, 0.18) 100%);
+            box-shadow: 0 8px 18px rgba(139, 92, 246, 0.12);
+        }
+
+        .note-title {
+            font-weight: 800;
+            font-size: 16px;
+            margin-bottom: 5px;
+            color: var(--text);
+            letter-spacing: 0.02em;
+        }
+
+        .note-preview {
+            font-size: 14px;
+            color: var(--text-soft);
+            line-height: 1.5;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .note-date {
+            font-size: 12px;
+            color: #8a7aa9;
+            margin-top: 5px;
+            font-weight: 700;
+        }
+
+        .editor-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex: 0 0 auto;
+        }
+
+        .editor-title {
+            font-size: 1.6rem;
+            color: var(--purple-deep);
+            font-weight: 800;
+            letter-spacing: 0.02em;
+        }
+
+        .editor-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .translate-control {
+            position: relative;
+        }
+
+        .translate-toolbar {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            z-index: 10;
+            display: grid;
+            grid-template-columns: repeat(3, 40px);
+            gap: 4px;
+            padding: 8px;
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            background: white;
+            box-shadow: 0 10px 24px var(--shadow);
+        }
+
+        .translate-toolbar.hidden {
+            display: none;
+        }
+
+        .translate-language {
+            display: grid;
+            width: 40px;
+            aspect-ratio: 1;
+            place-items: center;
+            padding: 0;
+            border: 0;
+            border-radius: 6px;
+            background: var(--card);
+            color: var(--text);
+            cursor: pointer;
+        }
+
+        .translate-language img {
+            display: block;
+            width: 24px;
+            height: 24px;
+        }
+
+        .translate-language:hover {
+            background: var(--purple-soft);
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .btn:active {
+            transform: translateY(0) scale(0.98);
+        }
+
+        .btn-save {
+            background: linear-gradient(135deg, #9ad5b2, #74c69d);
+            color: var(--success-text);
+            box-shadow: 0 8px 18px rgba(116, 198, 157, 0.2);
+        }
+
+        .btn-save:hover {
+            background: linear-gradient(135deg, #8ec5a1, #66b88f);
+            transform: translateY(-1px);
+        }
+
+        .btn-delete {
+            background: linear-gradient(135deg, #f5bfd0, #eea4bf);
+            color: var(--error-text);
+            box-shadow: 0 8px 18px rgba(238, 164, 191, 0.2);
+        }
+
+        .btn-delete:hover {
+            background: linear-gradient(135deg, #f1b5cb, #e996b1);
+            transform: translateY(-1px);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        #editorForm {
+            flex: 1;
+            min-height: 0;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .note-meta {
+            flex: 0 0 auto;
+        }
+
+        #editorForm > .form-group:last-child {
+            display: flex;
+            flex: 1;
+            flex-direction: column;
+            min-height: 0;
+            margin-bottom: 0;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 800;
+            color: var(--purple-deep);
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            font-size: 0.76rem;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid var(--line);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.7);
+            font-size: 16px;
+            color: var(--text);
+            font-family: 'Trebuchet MS', 'Segoe UI', sans-serif;
+            transition: border-color 0.3s ease, box-shadow 0.2s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--purple-primary);
+            box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.12);
+        }
+
+        .form-textarea {
+            width: 100%;
+            flex: 1;
+            min-height: 0;
+            padding: 15px;
+            border: 2px solid var(--line);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.7);
+            font-size: 16px;
+            font-family: 'Trebuchet MS', 'Segoe UI', sans-serif;
+            resize: none;
+            overflow-x: hidden;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+            transition: border-color 0.3s ease, box-shadow 0.2s ease;
+            line-height: 1.7;
+            color: var(--text);
+        }
+
+        .form-textarea:focus {
+            outline: none;
+            border-color: var(--purple-primary);
+            box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.12);
+        }
+
+        #messageArea {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            flex: 0 0 auto;
+        }
+
+        #messageArea > div {
+            width: 100%;
+            border-radius: 10px;
+            padding: 12px 15px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+
+        .empty-state h3 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+
+        .empty-state p {
+            font-size: 1rem;
+            opacity: 0.8;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .error {
+            background: var(--error);
+            color: var(--error-text);
+            padding: 12px 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(125, 45, 74, 0.12);
+        }
+
+        .success {
+            background: #def3e7;
+            color: var(--success-text);
+            padding: 12px 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(34, 84, 61, 0.12);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: minmax(0, 1fr);
+                grid-template-rows: minmax(0, 0.45fr) minmax(0, 0.55fr);
+                gap: 12px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .container {
+                padding: 8px;
+            }
+
+            .header {
+                margin-bottom: 12px;
+            }
+            
+            .sidebar, .note-editor {
+                padding: 10px;
+            }
+
+            .search-box {
+                padding: 9px 8px;
+                margin-bottom: 0;
+            }
+
+            .new-note-btn {
+                padding: 9px 4px;
+                margin-bottom: 0;
+                font-size: 13px;
+            }
+
+            .sidebar-controls {
+                display: grid;
+                grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+                gap: 8px;
+            }
+
+            .folder-panel {
+                margin-bottom: 8px;
+                padding-top: 8px;
+            }
+
+            .section-header {
+                margin-bottom: 6px;
+            }
+
+            .folder-list {
+                max-height: min(8vh, 55px);
+            }
+
+            .note-meta {
+                display: grid;
+                grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+                gap: 8px;
+            }
+
+            .note-meta .form-group {
+                min-width: 0;
+                margin-bottom: 12px;
+            }
+
+            .note-meta .form-label {
+                margin-bottom: 4px;
+            }
+
+            .note-meta .form-input {
+                padding: 10px;
+            }
+
+            .editor-header {
+                flex-wrap: wrap;
+                gap: 8px;
+                margin-bottom: 10px;
+            }
+        }
+
+        @media (max-width: 768px) and (max-height: 650px) {
+            .container {
+                padding: 4px;
+            }
+
+            .header {
+                margin-bottom: 4px;
+            }
+
+            .header h1 {
+                font-size: 1.4rem;
+                margin-bottom: 0;
+            }
+
+            .header p {
+                display: none;
+            }
+
+            .main-content {
+                grid-template-rows: minmax(0, 0.4fr) minmax(0, 0.6fr);
+                gap: 8px;
+            }
+
+            .sidebar,
+            .note-editor {
+                padding: 8px;
+            }
+
+            .search-box,
+            .new-note-btn {
+                padding: 6px;
+                font-size: 12px;
+            }
+
+            .folder-panel {
+                margin-bottom: 6px;
+                padding-top: 6px;
+            }
+
+            .section-header {
+                margin-bottom: 4px;
+            }
+
+            .folder-list {
+                max-height: min(7vh, 40px);
+            }
+
+            .editor-header {
+                gap: 4px;
+                margin-bottom: 6px;
+            }
+
+            .editor-title {
+                font-size: 1.2rem;
+            }
+
+            .editor-actions {
+                gap: 4px;
+            }
+
+            .editor-actions .btn {
+                padding: 6px 8px;
+                font-size: 12px;
+            }
+
+            .note-meta .form-group {
+                margin-bottom: 6px;
+            }
+
+            .note-meta .form-label {
+                margin-bottom: 2px;
+            }
+
+            .note-meta .form-input {
+                padding: 6px;
+            }
+
+            .form-textarea {
+                padding: 10px;
+                line-height: 1.4;
+            }
+
+            #messageArea {
+                margin-bottom: 4px;
+            }
+        }
+
+        /* Custom Scrollbar */
+        .notes-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .notes-list::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+
+        .notes-list::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 3px;
+        }
+
+        .notes-list::-webkit-scrollbar-thumb:hover {
+            background: #5a6fd8;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.45);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            z-index: 1000;
+        }
+
+        .modal-overlay.hidden {
+            display: none;
+        }
+
+        .modal-card {
+            width: min(420px, 100%);
+            background: rgba(255, 255, 255, 0.88);
+            border: 1px solid rgba(139, 92, 246, 0.14);
+            border-radius: 22px;
+            box-shadow: 0 24px 44px rgba(88, 63, 134, 0.2);
+            padding: 24px;
+            backdrop-filter: blur(12px);
+        }
+
+        .modal-card h3 {
+            margin-bottom: 18px;
+            font-size: 1.4rem;
+            color: var(--purple-deep);
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .modal-form {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .modal-form input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 2px solid var(--line);
+            border-radius: 12px;
+            background: #faf7ff;
+            font-size: 1rem;
+            color: var(--text);
+            font-family: 'Trebuchet MS', 'Segoe UI', sans-serif;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .modal-form input:focus {
+            outline: none;
+            border-color: var(--purple-primary);
+            box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.12);
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 6px;
+        }
+
+        .modal-actions .btn {
+            padding: 10px 16px;
+            border-radius: 10px;
+            font-size: 0.95rem;
+        }
+
+        .btn-secondary {
+            background: #f0eaff;
+            color: var(--text);
+        }
+
+        .btn-secondary:hover {
+            background: #e7dcff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📝 NoteTaker</h1>
+            <p>Organize your thoughts, capture your ideas</p>
+        </div>
+
+        <div class="main-content">
+            <div class="sidebar">
+                <div class="sidebar-controls">
+                    <input type="text" class="search-box" id="searchBox" placeholder="🔍 Search notes...">
+                    <button class="new-note-btn" id="newNoteBtn">✨ New Note</button>
+                </div>
+
+                <div class="folder-panel">
+                    <div class="section-header">
+                        <div class="folder-view-heading">
+                            <button type="button" class="mini-btn" id="folderBackBtn" aria-label="Back to folders" title="Back to folders" hidden>←</button>
+                            <h3 id="folderViewTitle">Folders</h3>
+                        </div>
+                        <button type="button" class="mini-btn" id="newFolderBtn">+ New</button>
+                    </div>
+                    <div class="folder-list" id="foldersList"></div>
+                </div>
+                
+                <div class="notes-list" id="notesList">
+                    <div class="loading">Loading notes...</div>
+                </div>
+            </div>
+
+            <div class="note-editor">
+                <div class="editor-header">
+                    <h2 class="editor-title" id="editorTitle">Select a note to edit</h2>
+                    <div class="editor-actions" id="editorActions" style="display: none;">
+                        <button class="btn btn-save" id="saveBtn">💾 Save</button>
+                        <div class="translate-control">
+                            <button type="button" class="btn btn-secondary" id="translateBtn" aria-expanded="false" aria-controls="translateToolbar">🌐 Translate</button>
+                            <div class="translate-toolbar hidden" id="translateToolbar" role="group" aria-label="Translate note to">
+                                <button type="button" class="translate-language" data-target-language="Chinese" aria-label="Chinese" title="Chinese"><img src="/flag-emoji/cn.svg" alt=""></button>
+                                <button type="button" class="translate-language" data-target-language="Cantonese" aria-label="Cantonese" title="Cantonese"><img src="/flag-emoji/hk.svg" alt=""></button>
+                                <button type="button" class="translate-language" data-target-language="English" aria-label="English" title="English"><img src="/flag-emoji/gb.svg" alt=""></button>
+                                <button type="button" class="translate-language" data-target-language="Japanese" aria-label="Japanese" title="Japanese"><img src="/flag-emoji/jp.svg" alt=""></button>
+                                <button type="button" class="translate-language" data-target-language="Korean" aria-label="Korean" title="Korean"><img src="/flag-emoji/kr.svg" alt=""></button>
+                            </div>
+                        </div>
+                        <button class="btn btn-delete" id="deleteBtn">🗑️ Delete</button>
+                    </div>
+                </div>
+
+                <div id="messageArea"></div>
+
+                <div id="editorForm" style="display: none;">
+                    <div class="note-meta">
+                        <div class="form-group">
+                            <label class="form-label" for="noteTitle">Title</label>
+                            <input type="text" class="form-input" id="noteTitle" placeholder="Enter note title...">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="noteFolder">Folder</label>
+                            <select class="form-input" id="noteFolder">
+                                <option value="">Unfiled</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="noteContent">Content</label>
+                        <textarea class="form-textarea" id="noteContent" placeholder="Start writing your note..."></textarea>
+                    </div>
+                </div>
+
+                <div class="empty-state" id="emptyState">
+                    <h3>Welcome to NoteTaker!</h3>
+                    <p>Select an existing note or create a new one to get started.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="folderModal" class="modal-overlay hidden" aria-hidden="true">
+        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="folderModalTitle">
+            <h3 id="folderModalTitle">Create folder</h3>
+            <form id="folderForm" class="modal-form">
+                <input id="folderNameInput" type="text" maxlength="100" placeholder="Folder name" autocomplete="off" />
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" id="folderCancelBtn">Cancel</button>
+                    <button type="submit" class="btn btn-save" id="folderSubmitBtn">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/utils.js"></script>
+    <script src="/app.js"></script>
+</body>
+</html>
+
