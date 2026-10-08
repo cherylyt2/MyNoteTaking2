@@ -1,0 +1,10 @@
+{
+  "functions": {
+    "src/main.py": {
+      "includeFiles": [
+        "src/static/**",
+        "prompts/**"
+      ]
+    }
+  }
+}
