@@ -6,6 +6,10 @@ class NoteTaker {
     this.selectedFolderId = 'all';
     this.isLoading = false;
     this.pendingFolderAction = null;
+    this.messageTimeout = null;
+    this.messageId = 0;
+    this.translationStatusTimeout = null;
+    this.translationStatusId = 0;
     this.init();
   }
 
@@ -91,7 +95,7 @@ class NoteTaker {
 
   async loadNotes() {
     this.isLoading = true;
-    this.showMessage('Loading notes...', 'loading');
+    const messageId = this.showMessage('Loading notes...', 'loading');
 
     try {
       const response = await fetch('/api/notes');
@@ -100,9 +104,11 @@ class NoteTaker {
       this.notes = await response.json();
       this.renderFolderList();
       this.renderNotesList();
-      this.hideMessage();
+      this.hideMessage(messageId);
     } catch (error) {
-      this.showMessage(`Error loading notes: ${error.message}`, 'error');
+      if (this.messageId === messageId) {
+        this.showMessage(`Error loading notes: ${error.message}`, 'error');
+      }
     } finally {
       this.isLoading = false;
     }
@@ -198,6 +204,9 @@ class NoteTaker {
     const note = this.notes.find(n => n.id === noteId);
     if (!note) return;
 
+    if (!this.isCurrentNote(note)) {
+      this.clearTranslationMessage();
+    }
     this.currentNote = note;
     this.showEditor();
     this.renderNotesList();
@@ -210,7 +219,17 @@ class NoteTaker {
     folderSelect.value = note.folder_id ? String(note.folder_id) : '';
   }
 
+  isCurrentNote(note) {
+    if (!this.currentNote || !note) return false;
+
+    if (this.currentNote.id != null && note.id != null) {
+      return String(this.currentNote.id) === String(note.id);
+    }
+    return this.currentNote === note;
+  }
+
   createNewNote() {
+    this.clearTranslationMessage();
     this.currentNote = {
       id: null,
       title: '',
@@ -242,6 +261,7 @@ class NoteTaker {
   }
 
   hideEditor() {
+    this.clearTranslationMessage();
     this.toggleTranslateToolbar(false);
     document.getElementById('emptyState').style.display = 'block';
     document.getElementById('editorForm').style.display = 'none';
@@ -270,7 +290,7 @@ class NoteTaker {
     this.toggleTranslateToolbar(false);
     const translateButton = document.getElementById('translateBtn');
     translateButton.disabled = true;
-    this.showMessage(`Translating to ${targetLanguage}...`, 'loading');
+    this.showTranslationMessage(`Translating to ${targetLanguage}...`);
 
     try {
       const response = await fetch('/api/notes/translate', {
@@ -280,12 +300,28 @@ class NoteTaker {
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Translation failed');
-      if (this.currentNote !== note) return;
+      if (!this.isCurrentNote(note)) {
+        this.clearTranslationMessage();
+        return;
+      }
 
-      document.getElementById('noteContent').value = result.translation;
-      this.showMessage(`Translated to ${targetLanguage}. Click Save to keep this change.`, 'success');
+      const noteContent = document.getElementById('noteContent');
+      noteContent.value = result.translation;
+      noteContent.scrollTop = 0;
+      await new Promise(resolve => {
+        requestAnimationFrame(() => requestAnimationFrame(resolve));
+      });
+      if (!this.isCurrentNote(note)) {
+        this.clearTranslationMessage();
+        return;
+      }
+
+      this.showTranslatedMessage(`Translated to ${targetLanguage}. Click Save to keep this change.`);
     } catch (error) {
-      this.showMessage(`Translation failed: ${error.message}`, 'error');
+      this.clearTranslationMessage();
+      if (this.isCurrentNote(note)) {
+        this.showMessage(`Translation failed: ${error.message}`, 'error');
+      }
     } finally {
       translateButton.disabled = false;
     }
@@ -496,14 +532,49 @@ class NoteTaker {
 
   showMessage(message, type) {
     const messageArea = document.getElementById('messageArea');
+    clearTimeout(this.messageTimeout);
+    this.messageTimeout = null;
+    const messageId = ++this.messageId;
     messageArea.innerHTML = `<div class="${type}">${message}</div>`;
 
     if (type === 'success') {
-      setTimeout(() => this.hideMessage(), 3000);
+      this.messageTimeout = setTimeout(() => this.hideMessage(messageId), 3000);
     }
+    return messageId;
   }
 
-  hideMessage() {
+  showTranslationMessage(message) {
+    clearTimeout(this.translationStatusTimeout);
+    this.translationStatusTimeout = null;
+    this.translationStatusId += 1;
+    const translationStatus = document.getElementById('translationStatus');
+    translationStatus.textContent = message;
+    translationStatus.hidden = false;
+  }
+
+  showTranslatedMessage(message) {
+    this.showTranslationMessage(message);
+    const statusId = this.translationStatusId;
+    this.translationStatusTimeout = setTimeout(() => {
+      if (this.translationStatusId === statusId) {
+        this.clearTranslationMessage();
+      }
+    }, 3000);
+  }
+
+  clearTranslationMessage() {
+    clearTimeout(this.translationStatusTimeout);
+    this.translationStatusTimeout = null;
+    this.translationStatusId += 1;
+    const translationStatus = document.getElementById('translationStatus');
+    translationStatus.textContent = '';
+    translationStatus.hidden = true;
+  }
+
+  hideMessage(messageId) {
+    if (messageId !== undefined && messageId !== this.messageId) return;
+    clearTimeout(this.messageTimeout);
+    this.messageTimeout = null;
     document.getElementById('messageArea').innerHTML = '';
   }
 }

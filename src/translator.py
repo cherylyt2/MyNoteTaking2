@@ -40,7 +40,7 @@ def llm_generate(prompt: str, target_language: str) -> str:
         base_url="https://openrouter.ai/api/v1",
         api_key=api_key,
     )
-    for attempt in range(2):
+    for attempt in range(5):
         response = client.chat.completions.create(
             model=MODEL,
             messages=[
