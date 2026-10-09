@@ -117,7 +117,10 @@ class TranslationTests(unittest.TestCase):
 
     def test_llm_retries_provider_response_without_choices(self):
         mock_response = SimpleNamespace(
-            choices=[SimpleNamespace(message=SimpleNamespace(content='こんにちは'))]
+            choices=[SimpleNamespace(
+                finish_reason='stop',
+                message=SimpleNamespace(content='こんにちは'),
+            )]
         )
         with patch.dict(os.environ, {'OPENROUTER_API_KEY': 'test-key'}):
             with patch('src.translator.OpenAI') as openai:
