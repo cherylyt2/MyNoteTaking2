@@ -27,10 +27,10 @@ TARGET_LANGUAGES = {
     "korean": "Korean",
 }
 TARGET_LANGUAGE_INSTRUCTIONS = {
-    "japanese": (
-        "Write natural Japanese using hiragana and/or katakana where appropriate. "
-        "Do not answer in Chinese."
-    ),
+    # "japanese": (
+    #     "Write natural Japanese using hiragana and/or katakana where appropriate. "
+    #     "Do not answer in Chinese."
+    # ),
     "korean": "Write natural Korean in Hangul. Do not answer in Chinese.",
 }
 
@@ -78,12 +78,8 @@ def llm_generate(prompt: str, target_language: str) -> str:
         base_url="https://openrouter.ai/api/v1",
         api_key=api_key,
     )
-
-    for attempt in range(5):
-
     last_finish_reason = None
     for attempt in range(MAX_ATTEMPTS):
-
         response = client.chat.completions.create(
             model=MODEL,
             messages=[
