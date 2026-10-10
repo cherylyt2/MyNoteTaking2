@@ -27,10 +27,10 @@ TARGET_LANGUAGES = {
     "korean": "Korean",
 }
 TARGET_LANGUAGE_INSTRUCTIONS = {
-    "japanese": (
-        "Write natural Japanese using hiragana and/or katakana where appropriate. "
-        "Do not answer in Chinese."
-    ),
+    # "japanese": (
+    #     "Write natural Japanese using hiragana and/or katakana where appropriate. "
+    #     "Do not answer in Chinese."
+    # ),
     "korean": "Write natural Korean in Hangul. Do not answer in Chinese.",
 }
 
